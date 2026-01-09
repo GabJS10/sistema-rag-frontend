@@ -37,11 +37,12 @@ export async function POST(req: NextRequest) {
   cookieStore.set("access_token", res.access_token, {
     httpOnly: true,
     sameSite: "strict",
+    //maxAge 15 minutes
+    maxAge: 60 * 15,
   });
   cookieStore.set("refresh_token", res.refresh_token, {
     httpOnly: true,
     sameSite: "strict",
-    path: "/api/refresh",
     maxAge: 60 * 60 * 24 * 7,
   });
 

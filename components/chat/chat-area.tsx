@@ -1,11 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus, Menu, Mic, Send, FileText, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface ChatAreaProps {
   isSidebarOpen: boolean;
@@ -23,12 +23,27 @@ const MOCK_DOCS = [
 export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedDocs, setSelectedDocs] = useState<number[]>([]);
-
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const toggleDoc = (id: number) => {
     setSelectedDocs((prev) =>
       prev.includes(id) ? prev.filter((docId) => docId !== id) : [...prev, id]
     );
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <main className="flex-1 flex flex-col relative bg-black overflow-hidden">
@@ -37,8 +52,8 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
         {!isSidebarOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
           >
             <Button
@@ -72,9 +87,9 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
 
       {/* Center Content with Entrance Animation */}
       <motion.div
+        transition={{ duration: 0.5, ease: "easeOut" }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
         className="flex-1 flex flex-col items-center justify-center p-4"
       >
         <div className="flex flex-col items-center justify-center gap-1 mb-12">
@@ -107,7 +122,10 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
                 <div className="text-xs font-medium text-zinc-400 px-2 py-2 border-b border-white/5 mb-1">
                   Seleccionar contexto
                 </div>
-                <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                <div
+                  className="flex flex-col gap-1 max-h-48 overflow-y-auto"
+                  ref={dropdownRef}
+                >
                   {MOCK_DOCS.map((doc) => (
                     <button
                       key={doc.id}
@@ -141,7 +159,7 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
           </AnimatePresence>
 
           <div className="relative flex items-center gap-2 bg-transparent rounded-[26px] p-2 pl-4 shadow-2xl transition-colors group-hover:border-white/20">
-            <Input placeholder="Pregunta lo que quieras" />
+            <Textarea placeholder="Pregunta lo que quieras" />
 
             <div className="flex items-center gap-1 pr-1">
               <div className="hidden md:flex">
