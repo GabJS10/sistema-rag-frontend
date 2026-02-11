@@ -46,59 +46,74 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
   }, []);
 
   return (
-    <main className="flex-1 flex flex-col relative bg-black overflow-hidden">
+    <main className="flex-1 flex flex-col relative bg-background overflow-hidden">
+      {/* Background Grid - subtle indication of structure */}
+      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+      />
+
       {/* Header / Toggle for Desktop (when sidebar closed) or Mobile */}
-      <div className="absolute top-4 left-4 z-10">
-        {!isSidebarOpen && (
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+        {isSidebarOpen ? null : (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            exit={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
+            className="flex items-center gap-2"
           >
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               onClick={onToggleSidebar}
-              className="text-zinc-400 hover:text-white hover:bg-zinc-900"
+              className="text-zinc-400 hover:text-white hover:bg-zinc-900 border-zinc-800 bg-black/50 backdrop-blur-sm h-9 w-9"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-4 h-4" />
             </Button>
+            <div className="h-9 px-3 flex items-center bg-black/50 backdrop-blur-sm border border-zinc-800 rounded-md">
+                 <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Console_Active</span>
+            </div>
           </motion.div>
         )}
-
-        {/* Mobile Toggle (Always show if desktop hidden logic is handled elsewhere, 
-            but for now we assume this component is used in a layout where mobile might need its own trigger. 
-            However, the main layout usually handles mobile sidebar sheet. 
-            Let's keep this simple: if sidebar is closed, show toggle. 
-            On mobile, sidebar is usually hidden by default. 
-            We'll stick to the requested "desktop toggle" behavior for now and let the parent handle mobile responsiveness if needed.) 
-        */}
       </div>
 
       {/* Mobile Header (Simplified for this component, assuming parent handles layout flexibility) */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-black text-white absolute w-full top-0 left-0 z-0">
+      <div className="md:hidden flex items-center justify-between p-4 bg-background border-b border-white/5 text-white absolute w-full top-0 left-0 z-0">
         <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5" />
         </Button>
-        <span className="font-medium">Chat</span>
+        <span className="font-mono text-xs uppercase tracking-widest">Intel_Core</span>
         <div className="w-6" />
       </div>
 
       {/* Center Content with Entrance Animation */}
       <motion.div
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        initial={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex-1 flex flex-col items-center justify-center p-4"
       >
-        <div className="flex flex-col items-center justify-center gap-1 mb-12">
-          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-6 ring-1 ring-white/10">
-            <div className="w-8 h-8 rounded-full bg-white shadow-lg shadow-white/20" />
+        <div className="flex flex-col items-center justify-center gap-6 mb-12">
+          <div className="w-20 h-20 bg-zinc-950 border border-zinc-800 flex items-center justify-center relative group">
+             {/* Data Beam Effect */}
+             <div className="absolute inset-0 bg-emerald-500/5 blur-xl group-hover:bg-emerald-500/10 transition-colors duration-500" />
+             <div className="w-12 h-12 bg-zinc-900 border border-zinc-700 flex items-center justify-center relative z-10">
+                <div className="w-2 h-2 bg-emerald-500 rounded-sm animate-pulse" />
+             </div>
+             
+             {/* Tech accents */}
+             <div className="absolute -top-1 -left-1 w-2 h-2 border-t border-l border-zinc-600" />
+             <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-zinc-600" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-medium text-white text-center tracking-tight">
-            ¿Qué toca hoy?
-          </h1>
+          
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl md:text-3xl font-medium text-white tracking-tight">
+              System Ready
+            </h1>
+            <p className="text-sm text-zinc-500 font-mono">
+              Awaiting query parameters...
+            </p>
+          </div>
         </div>
       </motion.div>
 
@@ -107,23 +122,30 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="relative group"
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="relative group flex flex-col gap-2"
         >
           {/* File Selection Dropdown */}
           <AnimatePresence>
-            {isDropdownOpen && (
+            {isDropdownOpen ? (
               <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                initial={{ opacity: 0, y: 5, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute bottom-full left-0 mb-4 bg-[#1a1a1a] border border-white/10 rounded-2xl w-64 p-2 shadow-2xl overflow-hidden z-20"
+                exit={{ opacity: 0, y: 5, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="absolute bottom-full left-0 mb-2 bg-zinc-950 border border-zinc-800 w-72 shadow-2xl overflow-hidden z-20"
               >
-                <div className="text-xs font-medium text-zinc-400 px-2 py-2 border-b border-white/5 mb-1">
-                  Seleccionar contexto
+                <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 bg-zinc-900/50">
+                   <div className="text-[10px] font-mono uppercase text-zinc-500 tracking-wider">
+                    Context_Source
+                   </div>
+                   <div className="text-[10px] text-zinc-600">
+                    {selectedDocs.length} selected
+                   </div>
                 </div>
+                
                 <div
-                  className="flex flex-col gap-1 max-h-48 overflow-y-auto"
+                  className="flex flex-col max-h-56 overflow-y-auto p-1"
                   ref={dropdownRef}
                 >
                   {MOCK_DOCS.map((doc) => (
@@ -131,80 +153,82 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
                       key={doc.id}
                       onClick={() => toggleDoc(doc.id)}
                       className={cn(
-                        "flex items-center gap-3 p-2 rounded-lg text-sm text-left transition-colors",
+                        "flex items-center gap-3 px-3 py-2 text-sm text-left transition-all border border-transparent",
                         selectedDocs.includes(doc.id)
-                          ? "bg-zinc-800 text-white"
-                          : "hover:bg-zinc-800/50 text-zinc-300"
+                          ? "bg-zinc-900 border-zinc-800 text-white"
+                          : "hover:bg-zinc-900/50 text-zinc-400 hover:text-zinc-200"
                       )}
                     >
                       <div
                         className={cn(
-                          "w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                          "w-3 h-3 border flex items-center justify-center shrink-0 transition-colors",
                           selectedDocs.includes(doc.id)
-                            ? "bg-white border-white text-black"
-                            : "border-zinc-600"
+                            ? "bg-emerald-500 border-emerald-500 text-black"
+                            : "border-zinc-700 bg-transparent"
                         )}
                       >
-                        {selectedDocs.includes(doc.id) && (
-                          <Check className="w-3 h-3" />
-                        )}
+                         {/* Checkbox visual is handled by bg color above mostly */}
                       </div>
-                      <FileText className="w-4 h-4 text-zinc-500" />
-                      <span className="truncate">{doc.name}</span>
+                      <span className="truncate font-mono text-xs">{doc.name}</span>
                     </button>
                   ))}
                 </div>
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
 
-          <div className="relative flex items-center gap-2 bg-transparent rounded-[26px] p-2 pl-4 shadow-2xl transition-colors group-hover:border-white/20">
-            <Textarea placeholder="Pregunta lo que quieras" />
-
-            <div className="flex items-center gap-1 pr-1">
-              <div className="hidden md:flex">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="text-zinc-400 hover:text-white h-9 w-9"
+          <div className="relative flex flex-col bg-zinc-950 border border-zinc-800 focus-within:border-zinc-600 transition-colors shadow-lg">
+             <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-900">
+                <div className="flex gap-2">
+                    <Button
+                    onClick={() => {
+                        setIsDropdownOpen(!isDropdownOpen);
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                        "h-6 px-2 text-[10px] font-mono uppercase tracking-wide gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-sm border border-transparent hover:border-zinc-800 transition-all",
+                        isDropdownOpen && "bg-zinc-900 text-white border-zinc-800",
+                         selectedDocs.length > 0 && "text-emerald-500"
+                    )}
+                    >
+                    <Plus className="w-3 h-3" />
+                    {selectedDocs.length > 0 ? "Context Active" : "Add Context"}
+                    </Button>
+                </div>
+             </div>
+             
+             <div className="relative">
+                <Textarea 
+                    placeholder="Enter command or query..." 
+                    className="min-h-[60px] w-full resize-none bg-transparent border-none text-sm p-4 focus-visible:ring-0 placeholder:text-zinc-600 font-normal"
+                />
+                
+                <div className="absolute bottom-3 right-3 flex items-center gap-1">
+                 <Button
+                    size="icon"
+                    className="h-7 w-7 rounded-sm bg-white text-black hover:bg-zinc-200 transition-colors"
                 >
-                  <Mic className="w-5 h-5" />
+                    <Send className="w-3 h-3" />
                 </Button>
-              </div>
-
-              <Button
-                size="icon"
-                className="h-9 w-9 rounded-full bg-white text-black hover:bg-zinc-200 transition-colors"
-              >
-                <Send className="w-4 h-4 ml-0.5" />
-              </Button>
-            </div>
+                </div>
+             </div>
           </div>
-
-          <div className="flex gap-2 mt-4 justify-center md:justify-start">
-            <Button
-              onClick={() => {
-                console.log("hola");
-
-                setIsDropdownOpen(!isDropdownOpen);
-              }}
-              className={cn(
-                "rounded-full border-zinc-700 bg-transparent text-white hover:bg-zinc-800 hover:text-white text-xs h-8 px-4 font-normal transition-colors",
-                isDropdownOpen && "bg-zinc-800 text-white border-zinc-600"
-              )}
-            >
-              <Plus className="w-3.5 h-3.5 mr-2" />
-              {selectedDocs.length > 0
-                ? `${selectedDocs.length} archivo(s) seleccionado(s)`
-                : "Seleccionar archivos"}
-            </Button>
-          </div>
-
-          <div className="mt-3 text-center">
-            <p className="text-[10px] text-white">
-              El sistema puede cometer errores. Considera verificar la
-              información importante.
-            </p>
+          
+          <div className="flex justify-between items-center px-1">
+             <div className="flex gap-4">
+                 <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-mono">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-900/50 border border-emerald-500/50"></div>
+                    SYSTEM_ONLINE
+                 </div>
+                 <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-mono">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-800 border border-zinc-700"></div>
+                    LATENCY: 12ms
+                 </div>
+             </div>
+             <p className="text-[10px] text-zinc-700 font-mono text-right">
+               CONFIDENTIAL // INTERNAL USE ONLY
+             </p>
           </div>
         </motion.div>
       </div>

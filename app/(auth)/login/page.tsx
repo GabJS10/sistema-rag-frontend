@@ -67,114 +67,111 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-zinc-950 overflow-hidden relative">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-background overflow-hidden relative">
       <AnimatedBackground />
 
-      <Card className="w-full max-w-md relative z-10 border-zinc-800 bg-zinc-900/80 backdrop-blur-sm shadow-2xl">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight text-white">
-            Bienvenido de nuevo
+      <Card className="w-full max-w-sm relative z-10 border-zinc-800 bg-zinc-950/90 backdrop-blur-md shadow-2xl rounded-none">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+        
+        <CardHeader className="space-y-1 text-center pb-2">
+           <div className="mx-auto w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
+              <div className="w-2 h-2 bg-emerald-500 rounded-sm" />
+           </div>
+          <CardTitle className="text-xl font-medium tracking-tight text-white font-mono uppercase">
+            Access Portal
           </CardTitle>
-          <CardDescription className="text-zinc-400">
-            Ingresa tus credenciales para acceder a tu cuenta
+          <CardDescription className="text-zinc-500 text-xs font-mono">
+            Enter credentials for authorization
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white">
-                Correo Electrónico
+              <Label htmlFor="email" className="text-zinc-400 text-xs font-mono uppercase tracking-wider">
+                Identity / Email
               </Label>
               <Input
                 id="email"
-                placeholder="nombre@ejemplo.com"
+                placeholder="OPERATOR_ID"
                 type="email"
                 {...register("email")}
-                className={`bg-zinc-950/50 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-zinc-500 transition-colors duration-200 ${
+                className={`bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-700 focus-visible:ring-0 focus-visible:border-emerald-500/50 transition-colors duration-200 h-10 font-mono text-sm rounded-none ${
                   errors.email
-                    ? "border-red-500 focus-visible:border-red-500"
+                    ? "border-red-900/50 focus-visible:border-red-900"
                     : "hover:border-zinc-700"
                 }`}
               />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email.message}</p>
-              )}
+              {errors.email ? (
+                <p className="text-[10px] text-red-500 font-mono">{errors.email.message}</p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-white">
-                  Contraseña
+                <Label htmlFor="password" className="text-zinc-400 text-xs font-mono uppercase tracking-wider">
+                  Security Key
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-zinc-400 hover:text-white hover:underline transition-colors"
+                  className="text-[10px] font-mono text-zinc-600 hover:text-emerald-500 hover:underline transition-colors"
                 >
-                  ¿Olvidaste tu contraseña?
+                  RECOVER_KEY?
                 </Link>
               </div>
               <div className="relative">
                 <Input
                   id="password"
-                  placeholder="********"
+                  placeholder="••••••••"
                   type={showPassword ? "text" : "password"}
                   {...register("password")}
-                  className={`bg-zinc-950/50 border-zinc-800 text-white placeholder:text-zinc-600 pr-10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-zinc-500 transition-colors duration-200 ${
+                  className={`bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-700 pr-10 focus-visible:ring-0 focus-visible:border-emerald-500/50 transition-colors duration-200 h-10 font-mono text-sm rounded-none ${
                     errors.password
-                      ? "border-red-500 focus-visible:border-red-500"
+                      ? "border-red-900/50 focus-visible:border-red-900"
                       : "hover:border-zinc-700"
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-sm text-red-500">
+              {errors.password ? (
+                <p className="text-[10px] text-red-500 font-mono">
                   {errors.password.message}
                 </p>
-              )}
+              ) : null}
             </div>
 
             <Button
               type="submit"
-              className="w-full font-semibold"
+              className="w-full font-mono text-xs uppercase tracking-widest bg-emerald-900/20 hover:bg-emerald-900/40 text-emerald-400 border border-emerald-900/50 hover:border-emerald-500/50 h-10 rounded-none transition-all"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Iniciando sesión..." : "Iniciar Sesión"}
+              {isSubmitting ? "AUTHENTICATING..." : "INITIATE_SESSION"}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2 border-t border-zinc-800 pt-6">
-          <div className="text-center text-sm text-zinc-400">
-            ¿No tienes una cuenta?{" "}
+        <CardFooter className="flex flex-col gap-4 border-t border-zinc-800/50 pt-6">
+          <div className="text-center text-xs font-mono text-zinc-600">
+            NO_ACCESS?{" "}
             <Link
               href="/register"
-              className="font-semibold text-white hover:underline transition-colors"
+              className="text-zinc-400 hover:text-emerald-400 transition-colors ml-1"
             >
-              Regístrate
+              REQUEST_CLEARANCE
             </Link>
+          </div>
+          
+          <div className="text-[10px] text-zinc-700 text-center font-mono">
+            SECURE CONNECTION // ENCRYPTED
           </div>
         </CardFooter>
       </Card>
-
-      <div className="absolute bottom-4 text-center text-xs text-zinc-500 z-10 hidden md:block">
-        <p>
-          Al continuar, aceptas nuestros{" "}
-          <Link href="/terms" className="underline hover:text-zinc-400">
-            Términos de Servicio
-          </Link>{" "}
-          y{" "}
-          <Link href="/privacy" className="underline hover:text-zinc-400">
-            Política de Privacidad
-          </Link>
-          .
-        </p>
-      </div>
+      
+      {/* Footer legal hidden for cleaner aesthetic or moved */}
     </div>
   );
 }

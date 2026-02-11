@@ -31,9 +31,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const res = await response.json();
+  const [res, cookieStore] = await Promise.all([
+    response.json(),
+    cookies(),
+  ]);
 
-  const cookieStore = await cookies();
   cookieStore.set("access_token", res.access_token, {
     httpOnly: true,
     sameSite: "strict",

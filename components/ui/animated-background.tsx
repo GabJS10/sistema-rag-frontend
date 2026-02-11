@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 interface LineData {
   id: number;
@@ -14,7 +14,7 @@ interface LineData {
   rotate: number;
 }
 
-export const AnimatedBackground = () => {
+export const AnimatedBackground = memo(() => {
   const [lines] = useState<LineData[]>(() => {
     const generatedLines = Array.from({ length: 20 }).map((_, i) => ({
       id: i,
@@ -63,4 +63,6 @@ export const AnimatedBackground = () => {
       <div className="absolute inset-0 bg-transparent opacity-20 bg-[radial-gradient(#ffffff33_1px,transparent_1px)] [background-size:16px_16px]" />
     </div>
   );
-};
+});
+
+AnimatedBackground.displayName = "AnimatedBackground";
