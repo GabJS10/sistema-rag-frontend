@@ -7,6 +7,10 @@ interface WebSocketMessage {
   [key: string]: unknown;
 }
 
+interface UseWebSocketOptions {
+  onMessage?: (message: WebSocketMessage) => void;
+}
+
 interface UseWebSocketReturn {
   isConnected: boolean;
   lastMessage: WebSocketMessage | null;
@@ -14,11 +18,17 @@ interface UseWebSocketReturn {
   error: string | null;
 }
 
-export function useWebSocket(): UseWebSocketReturn {
+export function useWebSocket({ onMessage }: UseWebSocketOptions = {}): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const onMessageRef = useRef(onMessage);
+
+  // Update ref when callback changes to avoid reconnecting
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
     let ws: WebSocket;
@@ -63,6 +73,9 @@ export function useWebSocket(): UseWebSocketReturn {
           try {
             const parsed = JSON.parse(event.data);
             setLastMessage(parsed);
+            if (onMessageRef.current) {
+              onMessageRef.current(parsed);
+            }
           } catch (e) {
             console.error("Error parsing WebSocket message:", e);
           }
@@ -92,7 +105,7 @@ export function useWebSocket(): UseWebSocketReturn {
         ws.close();
       }
     };
-  }, []);
+  }, []); // Empty dependency array ensures we only connect once
 
   const sendMessage = useCallback((message: WebSocketMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
