@@ -8,40 +8,39 @@ import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect, KeyboardEvent, useCallback } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Document, Message } from "@/lib/types";
 
 interface ChatAreaProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
+  initialMessages?: Message[];
+  conversationId?: string | null;
 }
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  isStreaming?: boolean;
-  sources?: string[]; // Para mostrar documentos usados
-  status?: string;    // Para mostrar estado actual (ej: "Buscando documentos...")
-}
-
-// Mock documents
-const MOCK_DOCS = [
-  { id: 1, name: "Reporte_Financiero_2024.pdf" },
-  { id: 2, name: "Analisis_De_Mercado.docx" },
-  { id: 3, name: "Presentacion_Q1.pptx" },
-  { id: 4, name: "Datos_Usuarios.csv" },
-];
-
-export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
+export function ChatArea({
+  isSidebarOpen,
+  onToggleSidebar,
+  initialMessages = [],
+  conversationId,
+}: ChatAreaProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedDocs, setSelectedDocs] = useState<number[]>([]);
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
+  // Documents State
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
+
   // Chat State
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputValue, setInputValue] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Sync messages when initialMessages prop changes (e.g., switching conversations)
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -49,6 +48,27 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isStreaming]);
+
+  // Fetch Documents
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const res = await fetch("/api/dashboard/documents");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setDocuments(data);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+      } finally {
+        setIsLoadingDocuments(false);
+      }
+    };
+
+    fetchDocuments();
+  }, []);
 
   // Define message handler
   const handleWebSocketMessage = useCallback((message: any) => {
@@ -58,31 +78,31 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
     setMessages((prev) => {
       const newMessages = [...prev];
       const lastMsgIndex = newMessages.length - 1;
-      
-      if (lastMsgIndex < 0 || newMessages[lastMsgIndex].role !== 'assistant') {
+
+      if (lastMsgIndex < 0 || newMessages[lastMsgIndex].role !== "assistant") {
         return prev;
       }
 
       const lastMsg = { ...newMessages[lastMsgIndex] };
 
       switch (type) {
-        case 'status':
+        case "status":
           lastMsg.status = data as string;
           break;
-        case 'sources':
+        case "sources":
           lastMsg.sources = data as string[];
           break;
-        case 'token':
+        case "token":
           lastMsg.content += data as string;
           // Clear status when generating content if desired, or keep it
-          if (lastMsg.status === "Thinking...") lastMsg.status = undefined; 
+          if (lastMsg.status === "Thinking...") lastMsg.status = undefined;
           break;
-        case 'done':
+        case "done":
           lastMsg.isStreaming = false;
           lastMsg.status = undefined;
           setIsStreaming(false);
           break;
-        case 'error':
+        case "error":
           lastMsg.isStreaming = false;
           lastMsg.status = "Error: " + (data as string);
           setIsStreaming(false);
@@ -93,10 +113,10 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
       return newMessages;
     });
   }, []);
-  
+
   // WebSocket Hook with callback
   const { isConnected, sendMessage, error } = useWebSocket({
-    onMessage: handleWebSocketMessage
+    onMessage: handleWebSocketMessage,
   });
 
   const handleSendMessage = () => {
@@ -104,14 +124,14 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
 
     const userMsg: Message = {
       id: Date.now().toString(),
-      role: 'user',
+      role: "user",
       content: inputValue,
       timestamp: new Date(),
     };
 
     const assistantMsg: Message = {
       id: (Date.now() + 1).toString(),
-      role: 'assistant',
+      role: "assistant",
       content: "",
       timestamp: new Date(),
       isStreaming: true,
@@ -125,24 +145,23 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
     // Send to WebSocket
     sendMessage({
       question: userMsg.content,
-      top_k: 2, // Default value from plan
-      conversation_id: null,
+      top_k: 2,
+      document_id: selectedDocId,
+      conversation_id: conversationId || null,
       re_rank: false,
-      variants: false
+      variants: false,
     });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
-  const toggleDoc = (id: number) => {
-    setSelectedDocs((prev) =>
-      prev.includes(id) ? prev.filter((docId) => docId !== id) : [...prev, id]
-    );
+  const toggleDoc = (id: string) => {
+    setSelectedDocId((prev) => (prev === id ? null : id));
   };
 
   useEffect(() => {
@@ -163,8 +182,13 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
   return (
     <main className="flex-1 flex flex-col relative bg-background overflow-hidden">
       {/* Background Grid - subtle indication of structure */}
-      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
-           style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+      <div
+        className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
       />
 
       {/* Header / Toggle for Desktop (when sidebar closed) or Mobile */}
@@ -186,7 +210,9 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
               <Menu className="w-4 h-4" />
             </Button>
             <div className="h-9 px-3 flex items-center bg-black/50 backdrop-blur-sm border border-zinc-800 rounded-md">
-                 <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Console_Active</span>
+              <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
+                Console_Active
+              </span>
             </div>
           </motion.div>
         )}
@@ -197,7 +223,9 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
         <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
           <Menu className="w-5 h-5" />
         </Button>
-        <span className="font-mono text-xs uppercase tracking-widest">Intel_Core</span>
+        <span className="font-mono text-xs uppercase tracking-widest">
+          Intel_Core
+        </span>
         <div className="w-6" />
       </div>
 
@@ -213,25 +241,31 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
           >
             <div className="flex flex-col items-center justify-center gap-6 mb-12">
               <div className="w-20 h-20 bg-zinc-950 border border-zinc-800 flex items-center justify-center relative group">
-                 {/* Data Beam Effect */}
-                 <div className="absolute inset-0 bg-emerald-500/5 blur-xl group-hover:bg-emerald-500/10 transition-colors duration-500" />
-                 <div className="w-12 h-12 bg-zinc-900 border border-zinc-700 flex items-center justify-center relative z-10">
-                    <div className={`w-2 h-2 ${isConnected ? 'bg-emerald-500' : 'bg-amber-500'} rounded-sm animate-pulse`} />
-                 </div>
-                 
-                 {/* Tech accents */}
-                 <div className="absolute -top-1 -left-1 w-2 h-2 border-t border-l border-zinc-600" />
-                 <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-zinc-600" />
+                {/* Data Beam Effect */}
+                <div className="absolute inset-0 bg-emerald-500/5 blur-xl group-hover:bg-emerald-500/10 transition-colors duration-500" />
+                <div className="w-12 h-12 bg-zinc-900 border border-zinc-700 flex items-center justify-center relative z-10">
+                  <div
+                    className={`w-2 h-2 ${isConnected ? "bg-emerald-500" : "bg-amber-500"} rounded-sm animate-pulse`}
+                  />
+                </div>
+
+                {/* Tech accents */}
+                <div className="absolute -top-1 -left-1 w-2 h-2 border-t border-l border-zinc-600" />
+                <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-zinc-600" />
               </div>
-              
+
               <div className="text-center space-y-2">
                 <h1 className="text-2xl md:text-3xl font-medium text-white tracking-tight">
                   System Ready
                 </h1>
                 <p className="text-sm text-zinc-500 font-mono">
-                  {isConnected ? "Awaiting query parameters..." : "Connecting to secure channel..."}
+                  {isConnected
+                    ? "Awaiting query parameters..."
+                    : "Connecting to secure channel..."}
                 </p>
-                {error && <p className="text-xs text-red-500 font-mono mt-2">{error}</p>}
+                {error && (
+                  <p className="text-xs text-red-500 font-mono mt-2">{error}</p>
+                )}
               </div>
             </div>
           </motion.div>
@@ -246,20 +280,26 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
                   animate={{ opacity: 1, y: 0 }}
                   className={cn(
                     "flex flex-col gap-2 max-w-[85%]",
-                    msg.role === 'user' ? "self-end items-end" : "self-start items-start"
+                    msg.role === "user"
+                      ? "self-end items-end"
+                      : "self-start items-start",
                   )}
                 >
-                  <div className={cn(
-                    "px-4 py-3 rounded-lg text-sm leading-relaxed",
-                    msg.role === 'user' 
-                      ? "bg-zinc-800 text-white rounded-br-none" 
-                      : "bg-zinc-900/50 border border-zinc-800 text-zinc-300 rounded-bl-none"
-                  )}>
+                  <div
+                    className={cn(
+                      "px-4 py-3 rounded-lg text-sm leading-relaxed",
+                      msg.role === "user"
+                        ? "bg-zinc-800 text-white rounded-br-none"
+                        : "bg-zinc-900/50 border border-zinc-800 text-zinc-300 rounded-bl-none",
+                    )}
+                  >
                     {msg.content}
-                    {msg.isStreaming && !msg.content && <span className="animate-pulse">_</span>}
+                    {msg.isStreaming && !msg.content && (
+                      <span className="animate-pulse">_</span>
+                    )}
                   </div>
-                  
-                  {msg.role === 'assistant' && (
+
+                  {msg.role === "assistant" && (
                     <div className="flex flex-wrap gap-2 items-center">
                       {msg.status && (
                         <span className="text-[10px] font-mono text-emerald-500/80 flex items-center gap-1">
@@ -267,12 +307,12 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
                           {msg.status}
                         </span>
                       )}
-                      
+
                       {msg.sources && msg.sources.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {msg.sources.map((source, idx) => (
-                            <span 
-                              key={idx} 
+                            <span
+                              key={idx}
                               className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-zinc-800 bg-zinc-900/50 text-zinc-500"
                             >
                               {source}
@@ -309,113 +349,145 @@ export function ChatArea({ isSidebarOpen, onToggleSidebar }: ChatAreaProps) {
                 className="absolute bottom-full left-0 mb-2 bg-zinc-950 border border-zinc-800 w-72 shadow-2xl overflow-hidden z-20"
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 bg-zinc-900/50">
-                   <div className="text-[10px] font-mono uppercase text-zinc-500 tracking-wider">
+                  <div className="text-[10px] font-mono uppercase text-zinc-500 tracking-wider">
                     Context_Source
-                   </div>
-                   <div className="text-[10px] text-zinc-600">
-                    {selectedDocs.length} selected
-                   </div>
+                  </div>
+                  <div className="text-[10px] text-zinc-600">
+                    {selectedDocId ? "1 selected" : "0 selected"}
+                  </div>
                 </div>
-                
+
                 <div
                   className="flex flex-col max-h-56 overflow-y-auto p-1"
                   ref={dropdownRef}
                 >
-                  {MOCK_DOCS.map((doc) => (
-                    <button
-                      key={doc.id}
-                      onClick={() => toggleDoc(doc.id)}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 text-sm text-left transition-all border border-transparent",
-                        selectedDocs.includes(doc.id)
-                          ? "bg-zinc-900 border-zinc-800 text-white"
-                          : "hover:bg-zinc-900/50 text-zinc-400 hover:text-zinc-200"
-                      )}
-                    >
-                      <div
+                  {isLoadingDocuments ? (
+                    <div className="p-4 text-center text-xs text-zinc-500 font-mono flex items-center justify-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Loading sources...
+                    </div>
+                  ) : documents.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-zinc-500 font-mono">
+                      No documents found.
+                    </div>
+                  ) : (
+                    documents.map((doc) => (
+                      <button
+                        key={doc.id}
+                        onClick={() => toggleDoc(doc.id)}
                         className={cn(
-                          "w-3 h-3 border flex items-center justify-center shrink-0 transition-colors",
-                          selectedDocs.includes(doc.id)
-                            ? "bg-emerald-500 border-emerald-500 text-black"
-                            : "border-zinc-700 bg-transparent"
+                          "flex items-center gap-3 px-3 py-2 text-sm text-left transition-all border border-transparent w-full",
+                          selectedDocId === doc.id
+                            ? "bg-zinc-900 border-zinc-800 text-white"
+                            : "hover:bg-zinc-900/50 text-zinc-400 hover:text-zinc-200",
                         )}
                       >
-                         {/* Checkbox visual is handled by bg color above mostly */}
-                      </div>
-                      <span className="truncate font-mono text-xs">{doc.name}</span>
-                    </button>
-                  ))}
+                        <div
+                          className={cn(
+                            "w-3 h-3 border flex items-center justify-center shrink-0 transition-colors",
+                            selectedDocId === doc.id
+                              ? "bg-emerald-500 border-emerald-500 text-black"
+                              : "border-zinc-700 bg-transparent",
+                          )}
+                        >
+                          {/* Checkbox visual */}
+                        </div>
+                        <span className="truncate font-mono text-xs">
+                          {doc.name}
+                        </span>
+                      </button>
+                    ))
+                  )}
                 </div>
               </motion.div>
             ) : null}
           </AnimatePresence>
 
-          <div className={cn(
-            "relative flex flex-col bg-zinc-950 border transition-colors shadow-lg",
-            isStreaming ? "border-emerald-500/20" : "border-zinc-800 focus-within:border-zinc-600"
-          )}>
-             <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-900">
-                <div className="flex items-center justify-between w-full">
-                    <Button
-                    onClick={() => {
-                        setIsDropdownOpen(!isDropdownOpen);
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                        "h-6 px-2 text-[10px] font-mono uppercase tracking-wide gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-sm border border-transparent hover:border-zinc-800 transition-all",
-                        isDropdownOpen && "bg-zinc-900 text-white border-zinc-800",
-                         selectedDocs.length > 0 && "text-emerald-500"
-                    )}
-                    >
-                    <Plus className="w-3 h-3" />
-                    {selectedDocs.length > 0 ? "Context Active" : "Add Context"}
-                    </Button>
-                </div>
-             </div>
-             
-             <div className="relative">
-                <Textarea 
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={isStreaming}
-                    placeholder={isStreaming ? "Processing query..." : "Enter command or query..."} 
-                    className="min-h-[60px] w-full resize-none bg-transparent border-none text-sm p-4 focus-visible:ring-0 placeholder:text-zinc-600 font-normal disabled:opacity-50"
-                />
-                
-                <div className="absolute bottom-3 right-3 flex items-center gap-1">
-                 <Button
-                    size="icon"
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isStreaming || !isConnected}
-                    className={cn(
-                      "h-7 w-7 rounded-sm transition-colors",
-                      isStreaming 
-                        ? "bg-zinc-800 text-zinc-500" 
-                        : "bg-white text-black hover:bg-zinc-200"
-                    )}
+          <div
+            className={cn(
+              "relative flex flex-col bg-zinc-950 border transition-colors shadow-lg",
+              isStreaming
+                ? "border-emerald-500/20"
+                : "border-zinc-800 focus-within:border-zinc-600",
+            )}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-900">
+              <div className="flex items-center justify-between w-full">
+                <Button
+                  onClick={() => {
+                    setIsDropdownOpen(!isDropdownOpen);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-6 px-2 text-[10px] font-mono uppercase tracking-wide gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-sm border border-transparent hover:border-zinc-800 transition-all",
+                    isDropdownOpen && "bg-zinc-900 text-white border-zinc-800",
+                    selectedDocId && "text-emerald-500",
+                  )}
                 >
-                    {isStreaming ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  <Plus className="w-3 h-3" />
+                  {selectedDocId ? "Context Active" : "Add Context"}
                 </Button>
-                </div>
-             </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <Textarea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isStreaming}
+                placeholder={
+                  isStreaming
+                    ? "Processing query..."
+                    : "Enter command or query..."
+                }
+                className="min-h-[60px] w-full resize-none bg-transparent border-none text-sm p-4 focus-visible:ring-0 placeholder:text-zinc-600 font-normal disabled:opacity-50"
+              />
+
+              <div className="absolute bottom-3 right-3 flex items-center gap-1">
+                <Button
+                  size="icon"
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isStreaming || !isConnected}
+                  className={cn(
+                    "h-7 w-7 rounded-sm transition-colors",
+                    isStreaming
+                      ? "bg-zinc-800 text-zinc-500"
+                      : "bg-white text-black hover:bg-zinc-200",
+                  )}
+                >
+                  {isStreaming ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Send className="w-3 h-3" />
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
-          
+
           <div className="flex justify-between items-center px-1">
-             <div className="flex gap-4">
-                 <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-mono">
-                    <div className={cn("w-1.5 h-1.5 rounded-full border", isConnected ? "bg-emerald-900/50 border-emerald-500/50" : "bg-red-900/50 border-red-500/50")}></div>
-                    {isConnected ? "SYSTEM_ONLINE" : "DISCONNECTED"}
-                 </div>
-                 <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-mono">
-                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-800 border border-zinc-700"></div>
-                    LATENCY: 12ms
-                 </div>
-             </div>
-             <p className="text-[10px] text-zinc-700 font-mono text-right">
-               CONFIDENTIAL // INTERNAL USE ONLY
-             </p>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-mono">
+                <div
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full border",
+                    isConnected
+                      ? "bg-emerald-900/50 border-emerald-500/50"
+                      : "bg-red-900/50 border-red-500/50",
+                  )}
+                ></div>
+                {isConnected ? "SYSTEM_ONLINE" : "DISCONNECTED"}
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-mono">
+                <div className="w-1.5 h-1.5 rounded-full bg-zinc-800 border border-zinc-700"></div>
+                LATENCY: 12ms
+              </div>
+            </div>
+            <p className="text-[10px] text-zinc-700 font-mono text-right">
+              CONFIDENTIAL // INTERNAL USE ONLY
+            </p>
           </div>
         </motion.div>
       </div>

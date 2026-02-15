@@ -18,7 +18,9 @@ interface UseWebSocketReturn {
   error: string | null;
 }
 
-export function useWebSocket({ onMessage }: UseWebSocketOptions = {}): UseWebSocketReturn {
+export function useWebSocket({
+  onMessage,
+}: UseWebSocketOptions = {}): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,29 +39,29 @@ export function useWebSocket({ onMessage }: UseWebSocketOptions = {}): UseWebSoc
       try {
         // 1. Obtener token
         const response = await fetch("/api/auth/token");
-        
+
         if (!response.ok) {
-           if (response.status === 401) {
-             // No hay sesión activa, no es necesariamente un error crítico del sistema
-             console.log("No active session for WebSocket connection");
-           } else {
-             setError(`Failed to fetch token: ${response.statusText}`);
-           }
-           return;
+          if (response.status === 401) {
+            // No hay sesión activa, no es necesariamente un error crítico del sistema
+            console.log("No active session for WebSocket connection");
+          } else {
+            setError(`Failed to fetch token: ${response.statusText}`);
+          }
+          return;
         }
 
         const data = await response.json();
         const token = data.token;
 
         if (!token) {
-             console.error("No token received for WebSocket");
-             setError("No auth token available");
-             return;
+          console.error("No token received for WebSocket");
+          setError("No auth token available");
+          return;
         }
 
         // 2. Conectar WebSocket
         const wsUrl = `${WS_URL}?token=${token}`;
-        
+
         ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
@@ -90,7 +92,6 @@ export function useWebSocket({ onMessage }: UseWebSocketOptions = {}): UseWebSoc
           console.error("WebSocket error:", event);
           setError("WebSocket connection error");
         };
-
       } catch (err) {
         console.error("Failed to establish WebSocket connection:", err);
         setError("Failed to establish connection");
@@ -108,6 +109,8 @@ export function useWebSocket({ onMessage }: UseWebSocketOptions = {}): UseWebSoc
   }, []); // Empty dependency array ensures we only connect once
 
   const sendMessage = useCallback((message: WebSocketMessage) => {
+    console.log("Sending message:", message);
+
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
     } else {
