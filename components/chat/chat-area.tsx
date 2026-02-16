@@ -9,20 +9,26 @@ import { useState, useRef, useEffect, KeyboardEvent, useCallback } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Document, Message } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useInvalidateConversations } from "@/hooks/use-chat-query";
+
+import { useSidebar } from "@/components/chat/sidebar-context";
 
 interface ChatAreaProps {
-  isSidebarOpen: boolean;
-  onToggleSidebar: () => void;
   initialMessages?: Message[];
   conversationId?: string | null;
 }
 
 export function ChatArea({
-  isSidebarOpen,
-  onToggleSidebar,
   initialMessages = [],
   conversationId,
 }: ChatAreaProps) {
+  const { isOpen: isSidebarOpen, toggle: onToggleSidebar } = useSidebar();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const invalidateConversations = useInvalidateConversations();
+  
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -33,14 +39,22 @@ export function ChatArea({
 
   // Chat State
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const messagesRef = useRef(messages);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationId || null);
   const [inputValue, setInputValue] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Sync messages when initialMessages prop changes (e.g., switching conversations)
+  // Sync messagesRef with messages state to access latest messages in callbacks
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  // Sync messages and conversationId when props change
   useEffect(() => {
     setMessages(initialMessages);
-  }, [initialMessages]);
+    setCurrentConversationId(conversationId || null);
+  }, [initialMessages, conversationId]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -74,6 +88,30 @@ export function ChatArea({
   const handleWebSocketMessage = useCallback((message: any) => {
     const type = message.type as string;
     const data = message.data;
+
+    // Handle success case separately to avoid side effects during render (setMessages)
+    if (type === "success") {
+      console.log("Success!", data.conversation_id);
+      
+      if (data.conversation_id && !currentConversationId) {
+        const newId = data.conversation_id;
+        setCurrentConversationId(newId);
+        
+        // OPTIMISTIC UPDATE:
+        // Use messagesRef.current to get the latest state without adding 'messages' to dependencies
+        const currentMessages = messagesRef.current;
+        
+        // 1. Pre-fill the cache
+        queryClient.setQueryData(["messages", newId], currentMessages);
+        
+        // 2. Refresh sidebar
+        invalidateConversations();
+        
+        // 3. Update URL
+        router.replace(`/chat/${newId}`);
+      }
+      return;
+    }
 
     setMessages((prev) => {
       const newMessages = [...prev];
@@ -112,7 +150,7 @@ export function ChatArea({
       newMessages[lastMsgIndex] = lastMsg;
       return newMessages;
     });
-  }, []);
+  }, [currentConversationId, invalidateConversations, queryClient, router]);
 
   // WebSocket Hook with callback
   const { isConnected, sendMessage, error } = useWebSocket({
@@ -147,7 +185,7 @@ export function ChatArea({
       question: userMsg.content,
       top_k: 2,
       document_id: selectedDocId,
-      conversation_id: conversationId || null,
+      conversation_id: currentConversationId,
       re_rank: false,
       variants: false,
     });

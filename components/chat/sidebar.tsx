@@ -5,26 +5,30 @@ import { Plus, Upload, Menu, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Conversation } from "@/lib/types";
+import { useConversations } from "@/hooks/use-chat-query";
+import { useParams, useRouter } from "next/navigation";
+import { useSidebar } from "@/components/chat/sidebar-context";
 
 interface SidebarProps {
-  isOpen: boolean;
-  onToggle: () => void;
   className?: string;
-  conversations?: Conversation[];
-  selectedId?: string | null;
-  onSelect?: (id: string) => void;
-  isLoading?: boolean;
 }
 
-export function Sidebar({
-  isOpen,
-  onToggle,
-  className,
-  conversations = [],
-  selectedId,
-  onSelect,
-  isLoading,
-}: SidebarProps) {
+export function Sidebar({ className }: SidebarProps) {
+  const { isOpen, toggle } = useSidebar();
+  const { data: conversations = [], isLoading } = useConversations();
+  const params = useParams();
+  const router = useRouter();
+  
+  const selectedId = params?.id as string;
+
+  const handleSelect = (id: string) => {
+    router.push(`/chat/${id}`);
+  };
+
+  const handleNewChat = () => {
+    router.push("/chat");
+  };
+
   return (
     <AnimatePresence initial={false}>
       {isOpen ? (
@@ -34,7 +38,7 @@ export function Sidebar({
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} // Deceleration easing
           className={cn(
-            "bg-background border-r border-white/10 flex flex-col overflow-hidden whitespace-nowrap z-20",
+            "bg-background border-r border-white/10 flex flex-col overflow-hidden whitespace-nowrap z-20 h-full",
             className,
           )}
         >
@@ -50,7 +54,7 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onToggle}
+                onClick={toggle}
                 className="text-zinc-500 hover:text-white hover:bg-zinc-900 h-8 w-8"
               >
                 <Menu className="w-4 h-4" />
@@ -61,6 +65,7 @@ export function Sidebar({
               {/* Main Actions */}
               <Button
                 variant="outline"
+                onClick={handleNewChat}
                 className="justify-start gap-3 text-zinc-300 hover:bg-zinc-900 hover:text-white w-full h-10 border-dashed border-zinc-800 hover:border-zinc-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -91,7 +96,7 @@ export function Sidebar({
                   {conversations.map((conv) => (
                     <button
                       key={conv.id}
-                      onClick={() => onSelect?.(conv.id)}
+                      onClick={() => handleSelect(conv.id)}
                       className={cn(
                         "w-full text-left px-3 py-2 rounded-sm group transition-colors border flex items-center gap-2",
                         selectedId === conv.id
