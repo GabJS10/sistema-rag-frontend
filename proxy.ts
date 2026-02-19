@@ -2,15 +2,22 @@ import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { API_URL } from "@/lib/constants";
 
-const protectedRoutes = ["/"];
+const protectedRoutes = ["/", "/chat"];
 
 const checkIsProtectedRoute = (path: string) => {
-  return protectedRoutes.includes(path);
+  //si es una ruta estatica
+  if (protectedRoutes.includes(path)) {
+    return true;
+  }
+
+  //si es una ruta dinamica, primero filtramos para no tener en cuenta la raiz
+  const dynamicRoutes = protectedRoutes.filter((route) => route !== "/");
+
+  return dynamicRoutes.some((route) => path.startsWith(`${route}/`));
 };
 
 export async function proxy(req: NextRequest) {
   const currentPath = req.nextUrl.pathname;
-
   const isProtectedRoute = checkIsProtectedRoute(currentPath);
 
   if (!isProtectedRoute) {
@@ -62,3 +69,7 @@ export async function proxy(req: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|.*\\.png$).*)"],
+};

@@ -1,10 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, Menu, Loader2 } from "lucide-react";
+import { Plus, Menu, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Conversation } from "@/lib/types";
 import { useConversations } from "@/hooks/use-chat-query";
 import { useParams, useRouter } from "next/navigation";
 import { useSidebar } from "@/components/chat/sidebar-context";
@@ -18,7 +17,7 @@ export function Sidebar({ className }: SidebarProps) {
   const { data: conversations = [], isLoading } = useConversations();
   const params = useParams();
   const router = useRouter();
-  
+
   const selectedId = params?.id as string;
 
   const handleSelect = (id: string) => {

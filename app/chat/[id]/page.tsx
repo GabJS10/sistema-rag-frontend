@@ -23,10 +23,5 @@ export default function ChatPage() {
     );
   }
 
-  return (
-    <ChatArea 
-      conversationId={id} 
-      initialMessages={messages} 
-    />
-  );
+  return <ChatArea conversationId={id} initialMessages={messages} />;
 }
