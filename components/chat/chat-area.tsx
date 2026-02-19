@@ -2,7 +2,17 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Menu, Mic, Send, FileText, Check, Loader2, ArrowUpDown, Layers } from "lucide-react";
+import {
+  Plus,
+  Menu,
+  Mic,
+  Send,
+  FileText,
+  Check,
+  Loader2,
+  ArrowUpDown,
+  Layers,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect, KeyboardEvent, useCallback } from "react";
@@ -193,7 +203,6 @@ export function ChatArea({
     // Send to WebSocket
     sendMessage({
       question: userMsg.content,
-      top_k: 2,
       document_id: selectedDocId,
       conversation_id: currentConversationId,
       re_rank: useReRank,
@@ -498,7 +507,8 @@ export function ChatArea({
                   size="sm"
                   className={cn(
                     "h-6 px-2 text-[10px] font-mono uppercase tracking-wide gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-sm border border-transparent hover:border-zinc-800 transition-all",
-                    useVariants && "bg-zinc-900 text-emerald-500 border-zinc-800",
+                    useVariants &&
+                      "bg-zinc-900 text-emerald-500 border-zinc-800",
                   )}
                 >
                   <Layers className="w-3 h-3" />
