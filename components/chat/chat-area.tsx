@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Menu, Mic, Send, FileText, Check, Loader2 } from "lucide-react";
+import { Plus, Menu, Mic, Send, FileText, Check, Loader2, ArrowUpDown, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect, KeyboardEvent, useCallback } from "react";
@@ -28,9 +28,11 @@ export function ChatArea({
   const router = useRouter();
   const queryClient = useQueryClient();
   const invalidateConversations = useInvalidateConversations();
-  
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [useReRank, setUseReRank] = useState(false);
+  const [useVariants, setUseVariants] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Documents State
@@ -40,7 +42,9 @@ export function ChatArea({
   // Chat State
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const messagesRef = useRef(messages);
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationId || null);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(conversationId || null);
   const [inputValue, setInputValue] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -85,72 +89,78 @@ export function ChatArea({
   }, []);
 
   // Define message handler
-  const handleWebSocketMessage = useCallback((message: any) => {
-    const type = message.type as string;
-    const data = message.data;
+  const handleWebSocketMessage = useCallback(
+    (message: any) => {
+      const type = message.type as string;
+      const data = message.data;
 
-    // Handle success case separately to avoid side effects during render (setMessages)
-    if (type === "success") {
-      console.log("Success!", data.conversation_id);
-      
-      if (data.conversation_id && !currentConversationId) {
-        const newId = data.conversation_id;
-        setCurrentConversationId(newId);
-        
-        // OPTIMISTIC UPDATE:
-        // Use messagesRef.current to get the latest state without adding 'messages' to dependencies
-        const currentMessages = messagesRef.current;
-        
-        // 1. Pre-fill the cache
-        queryClient.setQueryData(["messages", newId], currentMessages);
-        
-        // 2. Refresh sidebar
-        invalidateConversations();
-        
-        // 3. Update URL
-        router.replace(`/chat/${newId}`);
-      }
-      return;
-    }
+      // Handle success case separately to avoid side effects during render (setMessages)
+      if (type === "success") {
+        console.log("Success!", data);
 
-    setMessages((prev) => {
-      const newMessages = [...prev];
-      const lastMsgIndex = newMessages.length - 1;
+        if (data.conversation_id && !currentConversationId) {
+          const newId = data.conversation_id;
+          setCurrentConversationId(newId);
 
-      if (lastMsgIndex < 0 || newMessages[lastMsgIndex].role !== "assistant") {
-        return prev;
+          // OPTIMISTIC UPDATE:
+          // Use messagesRef.current to get the latest state without adding 'messages' to dependencies
+          const currentMessages = messagesRef.current;
+
+          // 1. Pre-fill the cache
+          queryClient.setQueryData(["messages", newId], currentMessages);
+
+          // 2. Refresh sidebar
+          invalidateConversations();
+
+          // 3. Update URL
+          router.replace(`/chat/${newId}`);
+        }
+        return;
       }
 
-      const lastMsg = { ...newMessages[lastMsgIndex] };
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const lastMsgIndex = newMessages.length - 1;
 
-      switch (type) {
-        case "status":
-          lastMsg.status = data as string;
-          break;
-        case "sources":
-          lastMsg.sources = data as string[];
-          break;
-        case "token":
-          lastMsg.content += data as string;
-          // Clear status when generating content if desired, or keep it
-          if (lastMsg.status === "Thinking...") lastMsg.status = undefined;
-          break;
-        case "done":
-          lastMsg.isStreaming = false;
-          lastMsg.status = undefined;
-          setIsStreaming(false);
-          break;
-        case "error":
-          lastMsg.isStreaming = false;
-          lastMsg.status = "Error: " + (data as string);
-          setIsStreaming(false);
-          break;
-      }
+        if (
+          lastMsgIndex < 0 ||
+          newMessages[lastMsgIndex].role !== "assistant"
+        ) {
+          return prev;
+        }
 
-      newMessages[lastMsgIndex] = lastMsg;
-      return newMessages;
-    });
-  }, [currentConversationId, invalidateConversations, queryClient, router]);
+        const lastMsg = { ...newMessages[lastMsgIndex] };
+
+        switch (type) {
+          case "status":
+            lastMsg.status = data as string;
+            break;
+          case "sources":
+            lastMsg.sources = data as string[];
+            break;
+          case "token":
+            lastMsg.content += data as string;
+            // Clear status when generating content if desired, or keep it
+            if (lastMsg.status === "Thinking...") lastMsg.status = undefined;
+            break;
+          case "done":
+            lastMsg.isStreaming = false;
+            lastMsg.status = undefined;
+            setIsStreaming(false);
+            break;
+          case "error":
+            lastMsg.isStreaming = false;
+            lastMsg.status = "Error: " + (data as string);
+            setIsStreaming(false);
+            break;
+        }
+
+        newMessages[lastMsgIndex] = lastMsg;
+        return newMessages;
+      });
+    },
+    [currentConversationId, invalidateConversations, queryClient, router],
+  );
 
   // WebSocket Hook with callback
   const { isConnected, sendMessage, error } = useWebSocket({
@@ -186,8 +196,8 @@ export function ChatArea({
       top_k: 2,
       document_id: selectedDocId,
       conversation_id: currentConversationId,
-      re_rank: false,
-      variants: false,
+      re_rank: useReRank,
+      variants: useVariants,
     });
   };
 
@@ -450,7 +460,7 @@ export function ChatArea({
             )}
           >
             <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-900">
-              <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2 w-full">
                 <Button
                   onClick={() => {
                     setIsDropdownOpen(!isDropdownOpen);
@@ -465,6 +475,34 @@ export function ChatArea({
                 >
                   <Plus className="w-3 h-3" />
                   {selectedDocId ? "Context Active" : "Add Context"}
+                </Button>
+
+                <div className="h-4 w-[1px] bg-zinc-800" />
+
+                <Button
+                  onClick={() => setUseReRank(!useReRank)}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-6 px-2 text-[10px] font-mono uppercase tracking-wide gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-sm border border-transparent hover:border-zinc-800 transition-all",
+                    useReRank && "bg-zinc-900 text-emerald-500 border-zinc-800",
+                  )}
+                >
+                  <ArrowUpDown className="w-3 h-3" />
+                  Re-Rank
+                </Button>
+
+                <Button
+                  onClick={() => setUseVariants(!useVariants)}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-6 px-2 text-[10px] font-mono uppercase tracking-wide gap-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-sm border border-transparent hover:border-zinc-800 transition-all",
+                    useVariants && "bg-zinc-900 text-emerald-500 border-zinc-800",
+                  )}
+                >
+                  <Layers className="w-3 h-3" />
+                  Variants
                 </Button>
               </div>
             </div>
