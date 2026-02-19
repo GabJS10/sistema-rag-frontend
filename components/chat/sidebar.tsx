@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, Menu, Loader2 } from "lucide-react";
+import { Plus, PanelLeftClose, Loader2, MessageSquare, Settings, LogOut, Clock, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useConversations } from "@/hooks/use-chat-query";
@@ -33,121 +33,109 @@ export function Sidebar({ className }: SidebarProps) {
       {isOpen ? (
         <motion.aside
           initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 280, opacity: 1 }}
+          animate={{ width: 260, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} // Deceleration easing
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
-            "bg-background border-r border-white/10 flex flex-col overflow-hidden whitespace-nowrap z-20 h-full",
-            className,
+            "bg-zinc-50 dark:bg-zinc-950 border-r border-border/40 flex flex-col overflow-hidden whitespace-nowrap z-20 h-full",
+            className
           )}
         >
-          <div className="flex flex-col h-full w-[280px]">
-            {/* Header with Toggle */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-sm bg-zinc-800 border border-white/10" />
-                <span className="text-sm font-medium tracking-tight">
-                  INTEL_CONSOLE
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggle}
-                className="text-zinc-500 hover:text-white hover:bg-zinc-900 h-8 w-8"
-              >
-                <Menu className="w-4 h-4" />
-              </Button>
+          <div className="flex flex-col h-full w-[260px]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 pt-4 pb-2">
+               <div className="flex items-center gap-2 px-2">
+                  <div className="w-5 h-5 bg-foreground rounded-full flex items-center justify-center">
+                     <div className="w-2 h-2 bg-background rounded-full" />
+                  </div>
+                  <span className="text-sm font-semibold tracking-tight text-foreground">RAG Protocol</span>
+               </div>
+               
+               <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={toggle}
+                  className="text-muted-foreground hover:text-foreground w-7 h-7"
+                >
+                  <PanelLeftClose className="w-4 h-4" />
+                </Button>
             </div>
 
-            <div className="p-3 gap-2 flex flex-col">
-              {/* Main Actions */}
+            <div className="px-3 pb-2 pt-4">
               <Button
-                variant="outline"
                 onClick={handleNewChat}
-                className="justify-start gap-3 text-zinc-300 hover:bg-zinc-900 hover:text-white w-full h-10 border-dashed border-zinc-800 hover:border-zinc-700 transition-colors"
+                className="w-full justify-start gap-2 shadow-sm bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 text-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all h-9"
+                size="sm"
               >
-                <Plus className="w-4 h-4" />
-                <span className="font-medium text-xs uppercase tracking-wider">
-                  New Operation
-                </span>
+                <Plus className="w-4 h-4 text-muted-foreground" />
+                <span className="font-medium">New Session</span>
               </Button>
             </div>
 
-            {/* Conversations List */}
-            <div className="flex-1 overflow-hidden overflow-y-auto">
-              <div className="px-4 py-2">
-                <p className="text-[10px] font-mono uppercase text-zinc-600 mb-2 tracking-widest">
-                  Archives
-                </p>
-              </div>
-
-              {isLoading ? (
-                <div className="flex justify-center p-4">
-                  <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
-                </div>
-              ) : conversations.length === 0 ? (
-                <div className="px-4 py-2 text-xs text-zinc-500 font-mono">
-                  No archives found.
-                </div>
-              ) : (
-                <div className="px-2 space-y-1">
-                  {conversations.map((conv) => (
-                    <button
-                      key={conv.id}
-                      onClick={() => handleSelect(conv.id)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 rounded-sm group transition-colors border flex items-center gap-2",
-                        selectedId === conv.id
-                          ? "bg-zinc-900 border-zinc-800 text-white"
-                          : "hover:bg-zinc-900/50 border-transparent hover:border-zinc-800/50 text-zinc-400",
-                      )}
-                    >
-                      <div
+            {/* Research Log */}
+            <div className="flex-1 overflow-hidden overflow-y-auto px-3 py-4">
+              <div className="space-y-6">
+                
+                {/* Group: Today */}
+                <div className="space-y-1">
+                  <div className="px-2 text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest mb-2 flex items-center gap-2">
+                     <Clock className="w-3 h-3" />
+                     Recent Activity
+                  </div>
+                  
+                  {isLoading ? (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground/30" />
+                    </div>
+                  ) : conversations.length === 0 ? (
+                    <div className="px-2 py-1 text-xs text-muted-foreground/40 italic">
+                      No logs found.
+                    </div>
+                  ) : (
+                    conversations.map((conv) => (
+                      <button
+                        key={conv.id}
+                        onClick={() => handleSelect(conv.id)}
                         className={cn(
-                          "w-1 h-1 rounded-full transition-colors",
+                          "w-full text-left px-2 py-1.5 rounded-md group transition-all flex items-center gap-2 relative",
                           selectedId === conv.id
-                            ? "bg-emerald-500"
-                            : "bg-zinc-700 group-hover:bg-zinc-500",
+                            ? "bg-zinc-100 dark:bg-zinc-800/80 text-foreground font-medium"
+                            : "text-muted-foreground/70 hover:text-foreground hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30"
                         )}
-                      />
-                      <div className="flex flex-col gap-0.5 w-full overflow-hidden">
-                        <span
-                          className={cn(
-                            "text-xs font-medium truncate",
-                            selectedId === conv.id
-                              ? "text-emerald-400"
-                              : "text-zinc-300 group-hover:text-white",
-                          )}
-                        >
-                          {conv.title || "Untitled Operation"}
+                      >
+                        {selectedId === conv.id && (
+                           <motion.div 
+                              layoutId="active-nav"
+                              className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-foreground rounded-full"
+                           />
+                        )}
+                        <span className={cn(
+                           "text-[13px] truncate leading-snug w-full transition-all",
+                           selectedId === conv.id ? "pl-2" : "pl-0"
+                        )}>
+                          {conv.title || "Untitled Session"}
                         </span>
-                        <span className="text-[10px] text-zinc-600 font-mono">
-                          {new Date(conv.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* User Profile */}
-            <div className="mt-auto p-3 border-t border-white/5 bg-zinc-950/30">
-              <div className="flex items-center gap-3 p-2 rounded-sm hover:bg-zinc-900 cursor-pointer transition-colors border border-transparent hover:border-zinc-800">
-                <div className="w-8 h-8 rounded-sm bg-zinc-800 border border-white/10 flex items-center justify-center text-xs font-bold text-zinc-400">
-                  GB
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-xs font-medium text-zinc-200">
-                    Gabriel Ball...
+            {/* Footer / Profile */}
+            <div className="p-3 mt-auto border-t border-border/20 bg-background/50 backdrop-blur-sm">
+              <button className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800 border border-black/5 dark:border-white/5 shadow-sm" />
+                <div className="flex flex-col text-left flex-1 min-w-0">
+                  <span className="text-xs font-medium text-foreground truncate">
+                    Gabriel B.
                   </span>
-                  <span className="text-[10px] text-emerald-500 font-mono uppercase">
-                    {" "}
-                    clearance: lvl 4
+                  <span className="text-[10px] text-muted-foreground truncate group-hover:text-foreground transition-colors">
+                    Pro Workspace
                   </span>
                 </div>
-              </div>
+                <Settings className="w-4 h-4 text-muted-foreground/40 group-hover:text-foreground transition-colors" />
+              </button>
             </div>
           </div>
         </motion.aside>
