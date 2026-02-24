@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   if (!validateBody.success) {
     return NextResponse.json(
       { error: validateBody.error.issues[0].message },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
     body: JSON.stringify({
       email: body.email,
       password: body.password,
+      first_name: body.first_name,
+      birth_date: body.birth_date,
     }),
   });
 
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: errorData.detail },
-      { status: response.status }
+      { status: response.status },
     );
   }
 

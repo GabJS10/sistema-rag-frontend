@@ -73,6 +73,49 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-5">
+          {/* First Name */}
+          <div className="space-y-2">
+            <Label htmlFor="first_name" className="text-zinc-400 font-medium">
+              Nombre Completo
+            </Label>
+            <Input
+              id="first_name"
+              placeholder="Juan Pérez"
+              type="text"
+              autoComplete="name"
+              {...register("first_name")}
+              className={`bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-700 focus-visible:border-zinc-600 h-12 rounded-xl transition-all ${
+                errors.first_name ? "border-red-500/50 focus-visible:ring-red-500/50" : ""
+              }`}
+            />
+            {errors.first_name && (
+              <p className="text-xs text-red-400 font-medium mt-1">
+                {errors.first_name.message as string}
+              </p>
+            )}
+          </div>
+
+          {/* Birth Date */}
+          <div className="space-y-2">
+            <Label htmlFor="birth_date" className="text-zinc-400 font-medium">
+              Fecha de Nacimiento
+            </Label>
+            <Input
+              id="birth_date"
+              type="date"
+              {...register("birth_date")}
+              className={`bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-700 focus-visible:border-zinc-600 h-12 rounded-xl transition-all [color-scheme:dark] ${
+                errors.birth_date ? "border-red-500/50 focus-visible:ring-red-500/50" : ""
+              }`}
+            />
+            {errors.birth_date && (
+              <p className="text-xs text-red-400 font-medium mt-1">
+                {errors.birth_date.message as string}
+              </p>
+            )}
+          </div>
+
+          {/* Email */}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-zinc-400 font-medium">
               Correo Electrónico
