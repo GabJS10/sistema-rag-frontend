@@ -5,17 +5,23 @@ import {
   Plus,
   PanelLeftClose,
   Loader2,
-  MessageSquare,
   Settings,
   LogOut,
   Clock,
-  ChevronRight,
+  User,
+  FileText,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useConversations } from "@/hooks/use-chat-query";
 import { useParams, useRouter } from "next/navigation";
 import { useSidebar } from "@/components/chat/sidebar-context";
+import { useUser } from "@/hooks/use-user";
+import { useTheme } from "next-themes";
+import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 
 interface SidebarProps {
   className?: string;
@@ -24,10 +30,35 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const { isOpen, toggle } = useSidebar();
   const { data: conversations = [], isLoading } = useConversations();
+  const { data: user, isLoading: isLoadingUser } = useUser();
   const params = useParams();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const selectedId = params?.id as string;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isMenuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const handleSelect = (id: string) => {
     router.push(`/chat/${id}`);
@@ -35,6 +66,39 @@ export function Sidebar({ className }: SidebarProps) {
 
   const handleNewChat = () => {
     router.push("/chat");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+      router.refresh();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      toast.error("Failed to logout");
+    }
+  };
+
+  const handleManageDocuments = () => {
+    toast.info("Document management coming soon");
+    setIsMenuOpen(false);
+  };
+
+  const handleUpdateProfile = () => {
+    toast.info("Profile update coming soon");
+    setIsMenuOpen(false);
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
@@ -46,7 +110,7 @@ export function Sidebar({ className }: SidebarProps) {
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
-            "bg-zinc-50 dark:bg-zinc-950/50 backdrop-blur-xl flex flex-col overflow-hidden whitespace-nowrap z-20 h-full",
+            "bg-zinc-50 dark:bg-zinc-950/50 backdrop-blur-xl  flex flex-col overflow-hidden whitespace-nowrap z-20 h-full",
             className,
           )}
         >
@@ -135,12 +199,78 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
 
             {/* Footer / Profile */}
-            <div className="p-3 mt-auto  bg-background/30 backdrop-blur-md">
-              <button className="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors group">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800 border border-black/5 dark:border-white/5 shadow-sm ring-2 ring-background" />
+            <div className="p-3 mt-auto bg-background/30 backdrop-blur-md relative">
+              <AnimatePresence>
+                {isMenuOpen && (
+                  <motion.div
+                    ref={menuRef}
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute bottom-full left-3 right-3 mb-2 bg-zinc-950/50 backdrop-blur-md shadow-xl rounded-2xl overflow-hidden z-30 ring-1 ring-black/5 flex flex-col p-1"
+                  >
+                    <div className="px-3 py-2 ">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {user?.nombre || "User"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        Free Plan
+                      </p>
+                    </div>
+
+                    <div className="p-1 space-y-0.5">
+                      <button
+                        onClick={handleManageDocuments}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-foreground/80 hover:bg-zinc-950 hover:text-accent-foreground rounded-lg transition-colors text-left "
+                      >
+                        <FileText className="w-4 h-4" />
+                        Gestionar documentos
+                      </button>
+                      <button
+                        onClick={handleUpdateProfile}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-foreground/80 hover:bg-zinc-950 hover:text-accent-foreground rounded-lg transition-colors text-left"
+                      >
+                        <User className="w-4 h-4" />
+                        Actualizar datos
+                      </button>
+                    </div>
+
+                    <div className="h-px bg-border/40 my-1" />
+
+                    <div className="p-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors text-left"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Cerrar sesión
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                ref={buttonRef}
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors group"
+              >
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.nombre}
+                    className="w-8 h-8 rounded-full border border-black/5 dark:border-white/5 shadow-sm ring-2 ring-background object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800 border border-black/5 dark:border-white/5 shadow-sm ring-2 ring-background flex items-center justify-center text-xs font-medium text-zinc-600 dark:text-zinc-200">
+                    {user?.nombre ? getInitials(user.nombre) : "U"}
+                  </div>
+                )}
+
                 <div className="flex flex-col text-left flex-1 min-w-0">
                   <span className="text-sm font-medium text-foreground truncate">
-                    Gabriel B.
+                    {isLoadingUser ? "Loading..." : user?.nombre || "User"}
                   </span>
                   <span className="text-[10px] text-muted-foreground truncate group-hover:text-foreground transition-colors">
                     Pro Workspace
