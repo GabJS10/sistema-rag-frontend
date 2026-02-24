@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,20 +59,24 @@ export default function LoginPage() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-[360px] mx-auto space-y-8"
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full space-y-8"
     >
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Bienvenido de nuevo</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-serif font-medium tracking-tight text-white">
+          Bienvenido de nuevo
+        </h1>
+        <p className="text-base text-zinc-400">
           Ingresa tu correo para acceder a tu cuenta
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">Correo Electrónico</Label>
+            <Label htmlFor="email" className="text-zinc-400 font-medium">
+              Correo Electrónico
+            </Label>
             <Input
               id="email"
               placeholder="nombre@ejemplo.com"
@@ -81,10 +85,12 @@ export default function LoginPage() {
               autoComplete="email"
               autoCorrect="off"
               {...register("email")}
-              className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+              className={`bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-700 focus-visible:border-zinc-600 h-12 rounded-xl transition-all ${
+                errors.email ? "border-red-500/50 focus-visible:ring-red-500/50" : ""
+              }`}
             />
             {errors.email && (
-              <p className="text-xs text-destructive font-medium mt-1">
+              <p className="text-xs text-red-400 font-medium mt-1">
                 {errors.email.message}
               </p>
             )}
@@ -92,27 +98,31 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password" className="text-zinc-400 font-medium">
+                Contraseña
+              </Label>
               <Link
                 href="/forgot-password"
-                className="text-xs font-medium text-primary hover:underline underline-offset-4"
+                className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors font-medium"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-            <div className="relative">
+            <div className="relative group">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoCapitalize="none"
                 autoComplete="current-password"
                 {...register("password")}
-                className={`pr-10 ${errors.password ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                className={`bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-700 focus-visible:border-zinc-600 h-12 rounded-xl pr-10 transition-all ${
+                  errors.password ? "border-red-500/50 focus-visible:ring-red-500/50" : ""
+                }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-300 transition-colors p-1"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -125,7 +135,7 @@ export default function LoginPage() {
               </button>
             </div>
             {errors.password && (
-              <p className="text-xs text-destructive font-medium mt-1">
+              <p className="text-xs text-red-400 font-medium mt-1">
                 {errors.password.message}
               </p>
             )}
@@ -134,8 +144,7 @@ export default function LoginPage() {
 
         <Button
           type="submit"
-          className="w-full font-medium"
-          size="lg"
+          className="w-full h-12 bg-zinc-900 text-white hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-600 font-medium text-[15px] rounded-xl transition-all shadow-lg shadow-zinc-950/20"
           disabled={isSubmitting}
         >
           {isSubmitting ? (
@@ -149,35 +158,17 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            O continuar con
-          </span>
-        </div>
+      <div className="text-center">
+        <p className="text-sm text-zinc-500">
+          ¿No tienes una cuenta?{" "}
+          <Link
+            href="/register"
+            className="text-zinc-300 hover:text-white font-medium transition-colors underline-offset-4 hover:underline"
+          >
+            Regístrate
+          </Link>
+        </p>
       </div>
-      
-      <div className="flex gap-2 w-full">
-         <Button variant="outline" className="w-full" type="button">
-            Google
-         </Button>
-         <Button variant="outline" className="w-full" type="button">
-            GitHub
-         </Button>
-      </div>
-
-      <p className="px-8 text-center text-sm text-muted-foreground">
-        ¿No tienes una cuenta?{" "}
-        <Link
-          href="/register"
-          className="underline underline-offset-4 hover:text-primary font-medium"
-        >
-          Regístrate
-        </Link>
-      </p>
     </motion.div>
   );
 }

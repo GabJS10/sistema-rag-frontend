@@ -71,7 +71,7 @@ export default function AuthLayout({
       </div>
 
       {/* Form Side */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-16 lg:p-24 bg-zinc-950 relative">
         <div className="w-full max-w-sm">
            {children}
         </div>
