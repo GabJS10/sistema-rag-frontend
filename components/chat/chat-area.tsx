@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Plus,
   ArrowUp,
-  MoreHorizontal,
+  PanelRightClose,
   Zap,
   Library,
   Copy,
@@ -233,7 +233,7 @@ export function ChatArea({
             onClick={onToggleSidebar}
             className="text-muted-foreground hover:bg-muted/50 rounded-lg"
           >
-            <MoreHorizontal className="w-5 h-5" />
+            <PanelRightClose className="w-5 h-5" />
           </Button>
         )}
       </div>

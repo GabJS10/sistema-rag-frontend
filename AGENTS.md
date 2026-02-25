@@ -29,7 +29,7 @@ This document contains guidelines for AI agents and developers working on this c
   - Group imports: Built-ins -> Third-party -> Local Components -> Local Utils/Types.
 
 ### React / Next.js
-- **Framework:** Next.js 16 (App Router).
+- **Framework:** Next.js 16 (App Router) with React 19.
 - **Components:**
   - Use **Function Components** with named exports (`export function MyComponent() {...}`).
   - Directives: Explicitly add `"use client";` at the top of components using hooks or interactivity.
@@ -37,28 +37,34 @@ This document contains guidelines for AI agents and developers working on this c
 
 ### Styling (Tailwind CSS)
 - **Engine:** Tailwind CSS v4.
-- **Utility:** Use `cn(...)` (from `@/lib/utils`) for conditional class merging.
+- **Utility:** Use `cn(...)` (from `@/lib/utils`) for conditional class merging (`clsx` + `tailwind-merge`).
 - **Pattern:** `className={cn("base-classes", condition && "conditional-classes", className)}`.
-- **Icons:** Use `lucide-react`.
+- **Icons & Animations:** Use `lucide-react` for icons and `framer-motion` for animations. `next-themes` is used for dark mode.
 
 ### UI Components (shadcn/ui)
 - This project uses a structure inspired by shadcn/ui.
 - **Location:** Reusable UI components are in `components/ui/`.
 - **Modification:** When modifying these, keep the `cva` (class-variance-authority) pattern for variants.
+- **Toasts:** Use `sonner` for toast notifications.
 
 ## 3. Project Structure
 
-- `app/` - Next.js App Router pages, layouts, and route handlers.
+- `app/` - Next.js App Router.
+  - `(auth)/` - Authentication pages (login, register).
+  - `api/` - Next.js Route Handlers (auth, chat, dashboard endpoints). Uses `jsonwebtoken` for auth.
+  - `chat/` - Chat interface routes.
 - `components/` - React components.
   - `components/ui/` - Generic/Primitive UI components (buttons, inputs, etc.).
-  - `components/chat/` - Feature-specific components (e.g., Chat interface).
-- `lib/` - Utilities (e.g., `utils.ts`, constants).
+  - `components/chat/` - Feature-specific components (e.g., Chat interface, using `react-markdown` and `react-textarea-autosize`).
+  - Contains global providers like `TanstackProvider.tsx` and `theme-provider.tsx`.
+- `lib/` - Utilities (`utils.ts`, `constants.ts`, `types.ts`).
+- `schemas/` - Zod validation schemas (`login.ts`, `register.ts`).
 - `public/` - Static assets.
 
 ## 4. Error Handling & State
-- Use strict null checks.
-- For form handling, `react-hook-form` + `zod` is the preferred pattern.
-- For async state, `@tanstack/react-query` is available.
+- **Null Checks:** Use strict null checks.
+- **Forms:** `react-hook-form` + `@hookform/resolvers/zod` + `zod` schemas (from `schemas/`) is the preferred pattern.
+- **Server State:** `@tanstack/react-query` is used for data fetching and mutations.
 
 ## 5. Agent Behavior
 - **Refactoring:** When modifying existing components, preserve existing accessible patterns (`aria-*` attributes) and animations (`framer-motion`).

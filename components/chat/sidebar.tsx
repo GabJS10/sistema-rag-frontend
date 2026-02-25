@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useConversations } from "@/hooks/use-chat-query";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useSidebar } from "@/components/chat/sidebar-context";
 import { useUser } from "@/hooks/use-user";
 import { useTheme } from "next-themes";
@@ -76,16 +77,6 @@ export function Sidebar({ className }: SidebarProps) {
     } catch (error) {
       toast.error("Failed to logout");
     }
-  };
-
-  const handleManageDocuments = () => {
-    toast.info("Document management coming soon");
-    setIsMenuOpen(false);
-  };
-
-  const handleUpdateProfile = () => {
-    toast.info("Profile update coming soon");
-    setIsMenuOpen(false);
   };
 
   const toggleTheme = () => {
@@ -220,20 +211,22 @@ export function Sidebar({ className }: SidebarProps) {
                     </div>
 
                     <div className="p-1 space-y-0.5">
-                      <button
-                        onClick={handleManageDocuments}
+                      <Link
+                        href="/dashboard/documents"
+                        onClick={() => setIsMenuOpen(false)}
                         className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-foreground/80 hover:bg-zinc-950 hover:text-accent-foreground rounded-lg transition-colors text-left "
                       >
                         <FileText className="w-4 h-4" />
                         Gestionar documentos
-                      </button>
-                      <button
-                        onClick={handleUpdateProfile}
+                      </Link>
+                      <Link
+                        href="/dashboard/general"
+                        onClick={() => setIsMenuOpen(false)}
                         className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-foreground/80 hover:bg-zinc-950 hover:text-accent-foreground rounded-lg transition-colors text-left"
                       >
                         <User className="w-4 h-4" />
                         Actualizar datos
-                      </button>
+                      </Link>
                     </div>
 
                     <div className="h-px bg-border/40 my-1" />

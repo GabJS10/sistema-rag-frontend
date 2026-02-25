@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema RAG Frontend
 
-## Getting Started
+A modern, high-performance web interface for a Retrieval-Augmented Generation (RAG) system, built with cutting-edge web technologies. This application provides a seamless, interactive chat experience to interface with underlying document intelligence and AI services.
 
-First, run the development server:
+## 🚀 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+*   **Interactive Chat Interface:** Real-time chat application with support for Markdown rendering (`react-markdown`) and auto-expanding input areas (`react-textarea-autosize`).
+*   **Robust Authentication:** Secure JWT-based authentication system with dedicated login and registration flows.
+*   **Modern UI/UX:** Clean, accessible, and responsive interface inspired by shadcn/ui, featuring smooth animations (`framer-motion`) and crisp iconography (`lucide-react`).
+*   **Dark Mode Support:** Built-in theme switching (light/dark/system) utilizing `next-themes`.
+*   **Optimized Data Fetching:** Efficient server state management, caching, and optimistic updates powered by `@tanstack/react-query`.
+*   **Type-Safe Forms:** Rigorous client-side and server-side validation using `react-hook-form` and `zod`.
+
+## 🛠️ Technology Stack
+
+*   **Framework:** [Next.js 16](https://nextjs.org/) (App Router)
+*   **Library:** [React 19](https://react.dev/)
+*   **Language:** [TypeScript](https://www.typescriptlang.org/) (Strict Mode)
+*   **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+*   **State Management:** [TanStack Query v5](https://tanstack.com/query/latest)
+*   **UI Primitives:** [Radix UI](https://www.radix-ui.com/)
+*   **Package Manager:** [pnpm](https://pnpm.io/)
+
+## 📂 Project Architecture
+
+```text
+├── app/               # Next.js App Router (Pages, Layouts, API Routes)
+│   ├── (auth)/        # Authentication routes (Login, Register)
+│   ├── api/           # Route Handlers (Auth, Chat, Dashboard)
+│   └── chat/          # Main chat interface and dynamic conversation routes
+├── components/        # React Components
+│   ├── chat/          # Feature-specific components for the chat UI
+│   └── ui/            # Reusable, primitive UI components (Buttons, Inputs, etc.)
+├── lib/               # Utility functions, constants, and global types
+├── schemas/           # Zod validation schemas for forms and API requests
+└── public/            # Static assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🏁 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Ensure you have [Node.js](https://nodejs.org/) (v20+ recommended) and `pnpm` installed on your machine.
 
-## Learn More
+```bash
+npm install -g pnpm
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Installation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Clone the repository.
+2. Install the project dependencies:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm install
+```
 
-## Deploy on Vercel
+### Development Server
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Run the local development server:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm dev
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000).
+
+## 📜 Available Scripts
+
+*   `pnpm dev`: Starts the Next.js development server.
+*   `pnpm build`: Creates an optimized production build.
+*   `pnpm start`: Starts the production server (requires a prior build).
+*   `pnpm lint`: Runs ESLint to check for code quality and styling issues.
+
+## 🔒 Environment Variables
+
+Create a `.env` or `.env.local` file in the root directory to configure the application. *(Note: Ensure you never commit sensitive tokens or secrets to version control).*
+
+```env
+# Example environment variables required by the frontend
+# NEXT_PUBLIC_API_URL=http://localhost:8000/api
+# JWT_SECRET=your_jwt_secret_here
+```
+
+## 🧑‍💻 Contributing
+
+When contributing to this project, please adhere to the established conventions documented in the [`AGENTS.md`](./AGENTS.md) file. Key guidelines include:
+*   Using `pnpm` for dependency management.
+*   Following the `cn()` utility pattern for Tailwind class merging.
+*   Ensuring strict typing and rigorous null-checks.
+*   Preserving accessibility (`aria-*`) attributes when modifying UI components.

@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { API_URL } from "@/lib/constants";
 
-const protectedRoutes = ["/", "/chat"];
+const protectedRoutes = ["/", "/chat", "/dashboard"];
 
 const checkIsProtectedRoute = (path: string) => {
   //si es una ruta estatica
