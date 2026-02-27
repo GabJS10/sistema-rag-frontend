@@ -16,6 +16,9 @@ import {
   File as FileIcon,
   Trash2,
   FileText,
+  Zap,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -127,6 +130,30 @@ export default function DocumentsPage() {
     },
   });
 
+  const embeddingMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/dashboard/embedding`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ document_id: id }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Error al generar embeddings");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Generación de embeddings iniciada");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al iniciar la generación");
+    },
+  });
+
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id);
   };
@@ -204,7 +231,9 @@ export default function DocumentsPage() {
 
               <Button
                 disabled={!selectedFile || uploadMutation.isPending}
-                onClick={() => selectedFile && uploadMutation.mutate(selectedFile)}
+                onClick={() =>
+                  selectedFile && uploadMutation.mutate(selectedFile)
+                }
                 className="h-10"
               >
                 {uploadMutation.isPending ? (
@@ -328,39 +357,108 @@ export default function DocumentsPage() {
                             {formatDate(doc.uploaded_at)}
                           </td>
                           <td className="px-4 py-3">
-                            <span
-                              className={cn(
-                                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border",
-                                (doc.status || "").toLowerCase() ===
-                                  "completado"
-                                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                  : (doc.status || "").toLowerCase() ===
-                                      "procesando"
-                                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                                    : (doc.status || "").toLowerCase() ===
-                                        "error"
-                                      ? "bg-red-500/10 text-red-500 border-red-500/20"
-                                      : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
-                              )}
-                            >
-                              {doc.status?.toUpperCase() || "DESCONOCIDO"}
-                            </span>
+                            {(() => {
+                              const status = (doc.status || "").toLowerCase();
+
+                              let variantClasses =
+                                "bg-zinc-500/10 text-zinc-500 border-zinc-500/20";
+                              let icon = null;
+                              const label =
+                                doc.status?.toUpperCase() || "DESCONOCIDO";
+
+                              if (
+                                status === "procesando" ||
+                                status === "embedding"
+                              ) {
+                                variantClasses =
+                                  "bg-blue-500/10 text-blue-500 border-blue-500/20";
+                                icon = (
+                                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                );
+                              } else if (status === "completado") {
+                                variantClasses =
+                                  "bg-zinc-500/10 text-zinc-500 border-zinc-500/20";
+                              } else if (status === "embedded") {
+                                variantClasses =
+                                  "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+                                icon = (
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                );
+                              } else if (
+                                status === "error" ||
+                                status === "error_embedding"
+                              ) {
+                                variantClasses =
+                                  "bg-red-500/10 text-red-500 border-red-500/20";
+                                icon = (
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                );
+                              }
+
+                              return (
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border",
+                                    variantClasses,
+                                  )}
+                                >
+                                  {icon}
+                                  {label}
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled={(doc.status || "").toLowerCase() === "procesando"}
-                              className={cn(
-                                "w-8 h-8 rounded-lg transition-colors",
-                                (doc.status || "").toLowerCase() === "procesando"
-                                  ? "text-muted-foreground/50 cursor-not-allowed"
-                                  : "text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                            <div className="flex items-center justify-end gap-2">
+                              {((doc.status || "").toLowerCase() ===
+                                "completado" ||
+                                (doc.status || "").toLowerCase() ===
+                                  "error_embedding") && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  disabled={
+                                    embeddingMutation.isPending &&
+                                    embeddingMutation.variables === doc.id
+                                  }
+                                  className="w-8 h-8 rounded-lg transition-colors text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
+                                  onClick={() =>
+                                    embeddingMutation.mutate(doc.id)
+                                  }
+                                  title="Generar Embeddings"
+                                >
+                                  {embeddingMutation.isPending &&
+                                  embeddingMutation.variables === doc.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Zap className="w-4 h-4" />
+                                  )}
+                                </Button>
                               )}
-                              onClick={() => handleDelete(doc.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={
+                                  (doc.status || "").toLowerCase() ===
+                                    "procesando" ||
+                                  (doc.status || "").toLowerCase() ===
+                                    "embedding"
+                                }
+                                className={cn(
+                                  "w-8 h-8 rounded-lg transition-colors",
+                                  (doc.status || "").toLowerCase() ===
+                                    "procesando" ||
+                                    (doc.status || "").toLowerCase() ===
+                                      "embedding"
+                                    ? "text-muted-foreground/50 cursor-not-allowed"
+                                    : "text-muted-foreground hover:text-red-500 hover:bg-red-500/10",
+                                )}
+                                onClick={() => handleDelete(doc.id)}
+                                title="Eliminar Documento"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))

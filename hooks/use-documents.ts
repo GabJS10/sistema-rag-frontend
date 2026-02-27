@@ -18,7 +18,10 @@ export function useDocuments() {
       if (!data) return false;
       
       const hasProcessing = data.some(
-        (doc) => doc.status?.toLowerCase() === "procesando"
+        (doc) => {
+          const status = doc.status?.toLowerCase();
+          return status === "procesando" || status === "embedding";
+        }
       );
       
       return hasProcessing ? 3000 : false;
