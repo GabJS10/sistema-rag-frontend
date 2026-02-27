@@ -13,5 +13,15 @@ export function useDocuments() {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return false;
+      
+      const hasProcessing = data.some(
+        (doc) => doc.status?.toLowerCase() === "procesando"
+      );
+      
+      return hasProcessing ? 3000 : false;
+    }
   });
 }

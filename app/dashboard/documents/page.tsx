@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useDocuments } from "@/hooks/use-documents";
 import { useSidebar } from "@/components/chat/sidebar-context";
 import { SettingsNav } from "@/components/dashboard/settings-nav";
@@ -74,9 +76,59 @@ export default function DocumentsPage() {
     }).format(new Date(dateString));
   };
 
+  const queryClient = useQueryClient();
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/dashboard/upload-document", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload document");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      setSelectedFile(null);
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Documento subido. Procesando...");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al subir el documento");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/dashboard/delete-document/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete document");
+      }
+      return response.json();
+    },
+    onMutate: async () => {
+      // Cancelar consultas activas para que no sobrescriban la actualización
+      await queryClient.cancelQueries({ queryKey: ["documents"] });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Documento eliminado correctamente");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al eliminar el documento");
+    },
+  });
+
   const handleDelete = (id: string) => {
-    console.log("Borrar ID:", id);
-    // TODO: Implement actual deletion logic
+    deleteMutation.mutate(id);
   };
 
   // Filtering
@@ -149,6 +201,24 @@ export default function DocumentsPage() {
                 <option value="docx">DOCX</option>
                 <option value="md">Markdown</option>
               </select>
+
+              <Button
+                disabled={!selectedFile || uploadMutation.isPending}
+                onClick={() => selectedFile && uploadMutation.mutate(selectedFile)}
+                className="h-10"
+              >
+                {uploadMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4 mr-2" />
+                    Subir documento
+                  </>
+                )}
+              </Button>
             </div>
 
             {/* Drag & Drop Area */}
@@ -258,15 +328,35 @@ export default function DocumentsPage() {
                             {formatDate(doc.uploaded_at)}
                           </td>
                           <td className="px-4 py-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                              Completado
+                            <span
+                              className={cn(
+                                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border",
+                                (doc.status || "").toLowerCase() ===
+                                  "completado"
+                                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                  : (doc.status || "").toLowerCase() ===
+                                      "procesando"
+                                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                                    : (doc.status || "").toLowerCase() ===
+                                        "error"
+                                      ? "bg-red-500/10 text-red-500 border-red-500/20"
+                                      : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
+                              )}
+                            >
+                              {doc.status?.toUpperCase() || "DESCONOCIDO"}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right">
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              className="w-8 h-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg"
+                              disabled={(doc.status || "").toLowerCase() === "procesando"}
+                              className={cn(
+                                "w-8 h-8 rounded-lg transition-colors",
+                                (doc.status || "").toLowerCase() === "procesando"
+                                  ? "text-muted-foreground/50 cursor-not-allowed"
+                                  : "text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                              )}
                               onClick={() => handleDelete(doc.id)}
                             >
                               <Trash2 className="w-4 h-4" />

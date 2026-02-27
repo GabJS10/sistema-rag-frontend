@@ -3,6 +3,7 @@ export interface Document {
   name: string;
   user_id?: string;
   uploaded_at?: string;
+  status?: "completado" | "error" | "procesando";
 }
 
 export interface Conversation {
